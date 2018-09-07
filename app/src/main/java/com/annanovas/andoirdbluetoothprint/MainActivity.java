@@ -1,8 +1,4 @@
-package anil.com.andoirdbluetoothprint;
-
-/**
- * Created by hp on 12/23/2016.
- */
+package com.annanovas.andoirdbluetoothprint;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -21,8 +17,6 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 import android.view.View;
-import android.view.Window;
-import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.Toast;
 
@@ -38,11 +32,13 @@ public class MainActivity extends Activity implements Runnable {
     private ProgressDialog mBluetoothConnectProgressDialog;
     private BluetoothSocket mBluetoothSocket;
     BluetoothDevice mBluetoothDevice;
+    String BILL ;
 
     @Override
     public void onCreate(Bundle mSavedInstanceState) {
         super.onCreate(mSavedInstanceState);
         setContentView(R.layout.activity_main);
+        myPrint();
         mScan = (Button) findViewById(R.id.Scan);
         mScan.setOnClickListener(new View.OnClickListener() {
             public void onClick(View mView) {
@@ -74,18 +70,18 @@ public class MainActivity extends Activity implements Runnable {
                         try {
                             OutputStream os = mBluetoothSocket
                                     .getOutputStream();
-                            String BILL = "";
+                            BILL = "";
 
-                            BILL = "                   XXXX MART    \n"
-                                    + "                   XX.AA.BB.CC.     \n " +
-                                    "                 NO 25 ABC ABCDE    \n" +
-                                    "                  XXXXX YYYYYY      \n" +
-                                    "                   MMM 590019091      \n";
+                            BILL = "                 XXXX MART\n"
+                                    + "           XXX.AA.BB.CC.     \n " +
+                                    "           NO 25 ABC ABCDE    \n" +
+                                    "            XXXXX YYYYYY      \n" +
+                                    "             MMM 590019      \n\n";
                             BILL = BILL
                                     + "-----------------------------------------------\n";
 
 
-                            BILL = BILL + String.format("%1$-10s %2$10s %3$13s %4$10s", "Item", "Qty", "Rate", "Totel");
+                            /*BILL = BILL + String.format("%1$-10s %2$10s %3$13s %4$10s", "Item", "Qty", "Rate", "Totel");
                             BILL = BILL + "\n";
                             BILL = BILL
                                     + "-----------------------------------------------";
@@ -103,7 +99,7 @@ public class MainActivity extends Activity implements Runnable {
 
                             BILL = BILL
                                     + "-----------------------------------------------\n";
-                            BILL = BILL + "\n\n ";
+                            BILL = BILL + "\n\n ";*/
                             os.write(BILL.getBytes());
                             //This is printer specific code you can comment ==== > Start
 
@@ -145,7 +141,6 @@ public class MainActivity extends Activity implements Runnable {
 
     @Override
     protected void onDestroy() {
-        // TODO Auto-generated method stub
         super.onDestroy();
         try {
             if (mBluetoothSocket != null)
@@ -182,6 +177,7 @@ public class MainActivity extends Activity implements Runnable {
                     mBluetoothConnectProgressDialog = ProgressDialog.show(this,
                             "Connecting...", mBluetoothDevice.getName() + " : "
                                     + mBluetoothDevice.getAddress(), true, false);
+
                     Thread mBlutoothConnectThread = new Thread(this);
                     mBlutoothConnectThread.start();
                     // pairToDevice(mBluetoothDevice); This method is replaced by
@@ -213,17 +209,60 @@ public class MainActivity extends Activity implements Runnable {
         }
     }
 
-    public void run() {
+    private void connectDevice(){
         try {
-            mBluetoothSocket = mBluetoothDevice
-                    .createRfcommSocketToServiceRecord(applicationUUID);
+            UUID uuidSting = UUID.fromString("00001101-0000-1000-8000-00805f9b34fb");
+            mBluetoothSocket=mBluetoothDevice.createRfcommSocketToServiceRecord(uuidSting);
+            mBluetoothSocket.connect();
+            //mBluetoothConnectProgressDialog.dismiss();
+
+        } catch (IOException e) {
+            //mBluetoothConnectProgressDialog.dismiss();
+            Log.d("CONNECT_EXCEPTION", String.valueOf(e));
+            e.printStackTrace();
+        }
+    }
+
+    public void run() {
+        /*try {
+            mBluetoothSocket = mBluetoothDevice.createRfcommSocketToServiceRecord(applicationUUID);
             mBluetoothAdapter.cancelDiscovery();
             mBluetoothSocket.connect();
             mHandler.sendEmptyMessage(0);
+
         } catch (IOException eConnectException) {
             Log.d(TAG, "CouldNotConnectToSocket", eConnectException);
             closeSocket(mBluetoothSocket);
+            if(mBluetoothConnectProgressDialog.isShowing()){
+                mBluetoothConnectProgressDialog.dismiss();
+            }
             return;
+        }*/
+        try {
+            mBluetoothSocket = mBluetoothDevice.createRfcommSocketToServiceRecord(applicationUUID);
+        }
+        catch (Exception e) {
+            Log.e("create_socket","Error creating socket");
+        }
+        try{
+            mBluetoothSocket.connect();
+            mHandler.sendEmptyMessage(0);
+            Log.e("socket_connect","Connected");
+        }
+        catch (IOException e){
+            Log.e("",e.getMessage());
+            try {
+                Log.e("socketConnection","trying fallback...");
+
+                mBluetoothSocket =(BluetoothSocket) mBluetoothDevice.getClass().getMethod("createRfcommSocket", new Class[] {int.class}).invoke(mBluetoothDevice,1);
+                mBluetoothSocket.connect();
+                mHandler.sendEmptyMessage(0);
+
+                Log.e("socket_connect","Connected");
+            }
+            catch (Exception e2) {
+                Log.e("socket_connect", "Couldn't establish Bluetooth connection!");
+            }
         }
     }
 
@@ -261,5 +300,40 @@ public class MainActivity extends Activity implements Runnable {
         buffer.flip();
         return buffer.array();
     }
+
+    public void myPrint(){
+        BILL = "";
+
+        BILL = "                   XXXX MART    \n"
+                + "                   XX.AA.BB.CC.     \n " +
+                "                 NO 25 ABC ABCDE    \n" +
+                "                  XXXXX YYYYYY      \n" +
+                "                   MMM 590019091      \n";
+        BILL = BILL
+                + "-----------------------------------------------\n";
+
+
+        BILL = BILL + String.format("%1$-10s %2$10s %3$13s %4$10s", "Item", "Qty", "Rate", "Totel");
+        BILL = BILL + "\n";
+        BILL = BILL
+                + "-----------------------------------------------";
+        BILL = BILL + "\n " + String.format("%1$-10s %2$10s %3$11s %4$10s", "item-001000", "5", "10", "50.00");
+        BILL = BILL + "\n " + String.format("%1$-10s %2$10s %3$11s %4$10s", "item-002000", "10", "5", "50.00");
+        BILL = BILL + "\n " + String.format("%1$-10s %2$10s %3$11s %4$10s", "item-003000", "20", "10", "200.00");
+        BILL = BILL + "\n " + String.format("%1$-10s %2$10s %3$11s %4$10s", "item-004", "50", "10", "500.00");
+
+        BILL = BILL
+                + "\n-----------------------------------------------";
+        BILL = BILL + "\n\n ";
+
+        BILL = BILL + "                   Total Qty:" + "      " + "85" + "\n";
+        BILL = BILL + "                   Total Value:" + "     " + "700.00" + "\n";
+
+        BILL = BILL
+                + "-----------------------------------------------\n";
+        BILL = BILL + "\n\n ";
+        Log.d("MY_PRINTER", BILL);
+    }
+
 
 }

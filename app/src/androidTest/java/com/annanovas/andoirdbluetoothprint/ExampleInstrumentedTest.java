@@ -1,4 +1,4 @@
-package anil.com.andoirdbluetoothprint;
+package com.annanovas.andoirdbluetoothprint;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
