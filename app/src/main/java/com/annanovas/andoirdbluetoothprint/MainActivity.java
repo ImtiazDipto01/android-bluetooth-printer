@@ -32,13 +32,47 @@ public class MainActivity extends Activity implements Runnable {
     private ProgressDialog mBluetoothConnectProgressDialog;
     private BluetoothSocket mBluetoothSocket;
     BluetoothDevice mBluetoothDevice;
-    String BILL ;
+    String BILL = "" ;
+    private static final String SPACE_COUNT_1 = " ";
+    private static final String SPACE_COUNT_2 = "  ";
+    private static final String SPACE_COUNT_3 = "   ";
+    private static final String SPACE_COUNT_4 = "    ";
+    private static final String SPACE_COUNT_5 = "     ";
+    private static final String SPACE_COUNT_6 = "      ";
+    private static final String SPACE_COUNT_7 = "       ";
+    private static final String SPACE_COUNT_8 = "        ";
+    private static final String SPACE_COUNT_9 = "         ";
+    private static final String SPACE_COUNT_10 = "          ";
+    private static final String SPACE_COUNT_11 = "           ";
+    private static final String SPACE_COUNT_12 = "            ";
+    private static final String SPACE_COUNT_13 = "             ";
+    private static final String SPACE_COUNT_14 = "              ";
+    private static final String SPACE_COUNT_15 = "               ";
+    private static final String SPACE_COUNT_16 = "                ";
+    private static final String SPACE_COUNT_17 = "                 ";
+    private static final String SPACE_COUNT_18 = "                  ";
+    private static final String SPACE_COUNT_19 = "                   ";
+    private static final String SPACE_COUNT_20 = "                    ";
+    private static final String SPACE_COUNT_21 = "                     ";
+    private static final String SPACE_COUNT_22 = "                      ";
+    private static final String SPACE_COUNT_23 = "                       ";
+    private static final String SPACE_COUNT_24 = "                        ";
+    private static final String SPACE_COUNT_25 = "                         ";
+    private static final String SPACE_COUNT_26 = "                          ";
+    private static final String SPACE_COUNT_27 = "                           ";
+    private static final String SPACE_COUNT_28 = "                            ";
+    private static final String SPACE_COUNT_29 = "                             ";
+    private static final String SPACE_COUNT_30 = "                              ";
+    private static final String SPACE_COUNT_31 = "                               ";
+    private static final String SPACE_COUNT_32 = "                                ";
+
+
 
     @Override
     public void onCreate(Bundle mSavedInstanceState) {
         super.onCreate(mSavedInstanceState);
         setContentView(R.layout.activity_main);
-        myPrint();
+        //myPrint();
         mScan = (Button) findViewById(R.id.Scan);
         mScan.setOnClickListener(new View.OnClickListener() {
             public void onClick(View mView) {
@@ -72,21 +106,56 @@ public class MainActivity extends Activity implements Runnable {
                                     .getOutputStream();
                             BILL = "";
 
-                            BILL = "                 XXXX MART\n"
+                            /*BILL = "                 XXXX MART\n"
                                     + "           XXX.AA.BB.CC.     \n " +
                                     "           NO 25 ABC ABCDE    \n" +
                                     "            XXXXX YYYYYY      \n" +
-                                    "             MMM 590019      \n\n";
+                                    "             MMM 590019      \n\n";*/
+
+                            BILL = printingProcedureStoreInfo("AnnaNovas Store");
+                            BILL = printingProcedureStoreInfo("MohammadPur, Dhaka-1219");
                             BILL = BILL
-                                    + "-----------------------------------------------\n";
+                                    + "--------------------------------\n\n";
+                            BILL = printingProcedure() ;
+                            for(int i = 0 ; i < 6 ; i++){
+                                if(i == 0){
+                                    BILL = printingProcedureProductInfo("CocaCola 1.25ltr", "65.00", "1", "65.00");
+                                }
+                                else if(i == 1){
+                                    BILL = printingProcedureProductInfo("Ruchi Chanachur - 250gm", "45.00", "2", "90.00");
+                                }
+                                else if(i == 2){
+                                    BILL = printingProcedureProductInfo("Pepsi - 2 ltr", "100.00", "10", "1000.00");
+                                }
+                                else{
+                                    BILL = printingProcedureProductInfo("CocaCola 1.25ltr", "65.00", "1", "65.00");
+                                }
+
+                            }
+
+                            BILL = BILL+"\n\n\n\n" ;
 
 
-                            /*BILL = BILL + String.format("%1$-10s %2$10s %3$13s %4$10s", "Item", "Qty", "Rate", "Totel");
-                            BILL = BILL + "\n";
+
+                            /*BILL = BILL + String.format("%1$2s %2$8s %3$5s %4$12s", "Item", "MRP", "Qty", "Total");
+                            BILL = BILL+"\n" ;
                             BILL = BILL
-                                    + "-----------------------------------------------";
-                            BILL = BILL + "\n " + String.format("%1$-10s %2$10s %3$11s %4$10s", "item-001", "5", "10", "50.00");
-                            BILL = BILL + "\n " + String.format("%1$-10s %2$10s %3$11s %4$10s", "item-002", "10", "5", "50.00");
+                                    + "--------------------------------\n\n";*/
+
+                            /*BILL = BILL
+                                    + "-----------------------------------------------";*/
+                            //BILL = BILL + "\n " + String.format("%1$-10s %2$10s %3$11s %4$10s", "item-001", "5", "10", "50.00");
+
+                            /*BILL = BILL+"\n" ;
+                            BILL = BILL + "CocaCola 1.25 ltr" ;
+                            BILL = BILL+"\n" ;
+                            BILL = BILL + String.format("%1$2s %2$8s %3$5s %4$12s", "", "65.00", "1", "650000");
+                            BILL = BILL+"\n\n" ;*/
+                            Log.d("BILL", BILL);
+
+
+
+                            /*BILL = BILL + "\n " + String.format("%1$-10s %2$10s %3$11s %4$10s", "item-002", "10", "5", "50.00");
                             BILL = BILL + "\n " + String.format("%1$-10s %2$10s %3$11s %4$10s", "item-003", "20", "10", "200.00");
                             BILL = BILL + "\n " + String.format("%1$-10s %2$10s %3$11s %4$10s", "item-004", "50", "10", "500.00");
 
@@ -100,7 +169,10 @@ public class MainActivity extends Activity implements Runnable {
                             BILL = BILL
                                     + "-----------------------------------------------\n";
                             BILL = BILL + "\n\n ";*/
-                            os.write(BILL.getBytes());
+
+                            //os.write(BILL.getBytes());
+                            os.write(new Formatter().bold().get());
+                            os.write(BILL.getBytes(), 0, BILL.getBytes().length);
                             //This is printer specific code you can comment ==== > Start
 
                             // Setting height
@@ -294,6 +366,26 @@ public class MainActivity extends Activity implements Runnable {
         return b[3];
     }
 
+    public static class Formatter {
+        /** The format that is being build on */
+        private byte[] mFormat;
+
+        public Formatter() {
+            // Default:
+            mFormat = new byte[]{27, 33, 0};
+        }
+        public byte[] get() {
+            return mFormat;
+        }
+
+        public Formatter bold() {
+            // Apply bold:
+            mFormat[2] = ((byte) (0x8 | mFormat[2]));
+            return this;
+        }
+
+    }
+
     public byte[] sel(int val) {
         ByteBuffer buffer = ByteBuffer.allocate(2);
         buffer.putInt(val);
@@ -335,5 +427,48 @@ public class MainActivity extends Activity implements Runnable {
         Log.d("MY_PRINTER", BILL);
     }
 
+    private String printingProcedureStoreInfo(String msg){
+        if(msg != null && msg.length() > 0){
+            int len = 32 - msg.length() ;
+            int spaceCount = len / 2 ;
+            if(!((spaceCount * 2) == len)){
+                spaceCount ++ ;
+            }
+            Log.d("spaceCount", String.valueOf(spaceCount));
+            for(int i = 1 ; i <= spaceCount ; i++){
+                BILL = BILL +" " ;
+            }
+            BILL = BILL + msg + "\n" ;
+        }
+        return BILL ;
+    }
+
+    private String printingProcedure(){
+        BILL = BILL + "Item      MRP   Qty        Total"+"\n" ;
+        BILL = BILL + "--------------------------------\n";
+        BILL = BILL+"\n" ;
+        return BILL ;
+    }
+
+    private String printingProcedureProductInfo(String productName, String MRP, String Qty, String total){
+        BILL = BILL + productName + "\n" ;
+        int MRPspaceCount = 13 - MRP.length() ;
+        for(int i = 1 ; i <= MRPspaceCount ; i++){
+            BILL = BILL+" " ;
+        }
+        BILL = BILL+MRP ;
+        int QtySpaceCount = 6 - Qty.length() ;
+        for(int i = 1 ; i <= QtySpaceCount ; i++){
+            BILL = BILL+" " ;
+        }
+        BILL = BILL+Qty ;
+        int totalpaceCount = 13 - total.length() ;
+        for(int i = 1 ; i <= totalpaceCount ; i++){
+            BILL = BILL+" " ;
+        }
+        BILL = BILL+total ;
+        BILL = BILL+"\n" ;
+        return BILL ;
+    }
 
 }
