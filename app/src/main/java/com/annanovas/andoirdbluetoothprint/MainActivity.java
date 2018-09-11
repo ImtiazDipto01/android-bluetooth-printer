@@ -3,6 +3,7 @@ package com.annanovas.andoirdbluetoothprint;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.text.DateFormatSymbols;
 import java.util.Set;
 import java.util.UUID;
 
@@ -65,7 +66,7 @@ public class MainActivity extends Activity implements Runnable {
     private static final String SPACE_COUNT_30 = "                              ";
     private static final String SPACE_COUNT_31 = "                               ";
     private static final String SPACE_COUNT_32 = "                                ";
-
+    private String[] comaSparatedarray;
 
 
     @Override
@@ -112,8 +113,9 @@ public class MainActivity extends Activity implements Runnable {
                                     "            XXXXX YYYYYY      \n" +
                                     "             MMM 590019      \n\n";*/
 
-                            BILL = printingProcedureStoreInfo("AnnaNovas Store");
-                            BILL = printingProcedureStoreInfo("MohammadPur, Dhaka-1219");
+                            BILL = BILL + printingProcedureStoreInfo("AnnaNovas Store");
+                            BILL = BILL + printingProcedureMakeAddress("South Banasree, Rampura, Dhaka, Dakhin Banasree Project Road, Dhaka 1219");
+                            //BILL = BILL + printingProcedureStoreInfo("MohammadPur, Dhaka-1219");
                             BILL = BILL
                                     + "--------------------------------\n\n";
                             BILL = printingProcedure() ;
@@ -428,7 +430,9 @@ public class MainActivity extends Activity implements Runnable {
     }
 
     private String printingProcedureStoreInfo(String msg){
+        String finalMsg = "" ;
         if(msg != null && msg.length() > 0){
+            msg = msg.replace(" ,", ",") ;
             int len = 32 - msg.length() ;
             int spaceCount = len / 2 ;
             if(!((spaceCount * 2) == len)){
@@ -436,11 +440,11 @@ public class MainActivity extends Activity implements Runnable {
             }
             Log.d("spaceCount", String.valueOf(spaceCount));
             for(int i = 1 ; i <= spaceCount ; i++){
-                BILL = BILL +" " ;
+                finalMsg = finalMsg +" " ;
             }
-            BILL = BILL + msg + "\n" ;
+            finalMsg = finalMsg + msg + "\n" ;
         }
-        return BILL ;
+        return finalMsg ;
     }
 
     private String printingProcedure(){
@@ -470,5 +474,106 @@ public class MainActivity extends Activity implements Runnable {
         BILL = BILL+"\n" ;
         return BILL ;
     }
+
+    private String printingProcedureMakeAddress(String address) {
+        String[] commaSplited = address.split(",");
+        //comaSparatedarray = splited.split(",");
+        String addressString = "" ;
+        String tmpString = "" ;
+        if(commaSplited.length > 0){
+            for(int i = 0; i < commaSplited.length ; i++){
+                Log.d("COMA_STRING:", commaSplited[i]);
+                String[] spaceSplited = commaSplited[i].split(" ") ;
+
+                //WITHOUT SPACE STRING
+                if(!(spaceSplited.length > 0)){
+                    int len = tmpString.length() + commaSplited[i].length() ;
+                    if(i != (commaSplited.length - 1)){
+                        len++ ;
+                    }
+                    if(len < 32){
+                        tmpString = tmpString + commaSplited[i];
+                        if(i != (commaSplited.length - 1)){
+                            tmpString = tmpString + " " ;
+                        }
+                        else if(i == (commaSplited.length - 1)){
+                            addressString = addressString + printingProcedureStoreInfo(tmpString) ;
+                            //addressString = addressString + tmpString+"\n" ;
+                        }
+                        Log.d("PureString", commaSplited[i]) ;
+                    }
+                    else{
+                        addressString = addressString + printingProcedureStoreInfo(tmpString+",") ;
+                        //addressString = addressString + tmpString+","+"\n" ;
+                        tmpString = "" ;
+                    }
+
+                }
+
+                //WITH SPACE STRING
+                for(int j = 0 ; j < spaceSplited.length ; j++){
+                    int len = tmpString.length() + spaceSplited[j].length() ;
+                    if(j != (spaceSplited.length - 1)){
+                        len++ ;
+                    }
+
+                    if(len < 32){
+                        tmpString = tmpString + spaceSplited[j];
+                        if(j != (spaceSplited.length - 1)){
+                            tmpString = tmpString + " " ;
+                        }
+                        else if(i == (commaSplited.length - 1)){
+                            addressString = addressString + printingProcedureStoreInfo(tmpString) ;
+                            //addressString = addressString + tmpString+"\n" ;
+                        }
+                        Log.d("SpaceString", spaceSplited[j]) ;
+                    }
+                    else{
+                        addressString = addressString + printingProcedureStoreInfo(tmpString+",");
+                        //addressString = addressString + tmpString+","+"\n" ;
+                        tmpString = "" ;
+                        j-- ;
+
+                    }
+                    /*if(j == (spaceSplited.length - 1)){
+                        int len2 = tmpString.length() + spaceSplited[i].length()+1 ;
+                        addressString = addressString + tmpString+","+"\n" ;
+                    }*/
+                }
+            }
+        }
+
+        else{
+            String[] spaceSplited = address.split(" ");
+            for(int j = 0 ; j < spaceSplited.length ; j++){
+                int len = tmpString.length() + spaceSplited[j].length() ;
+                if(j != (spaceSplited.length - 1)){
+                    len++ ;
+                }
+
+                if(len < 32){
+                    tmpString = tmpString + spaceSplited[j];
+                    if(j != (spaceSplited.length - 1)){
+                        tmpString = tmpString + " " ;
+                    }
+                    else if(j == (spaceSplited.length - 1)){
+                        addressString = addressString + printingProcedureStoreInfo(tmpString) ;
+                        //addressString = addressString + tmpString+"\n" ;
+                    }
+                    Log.d("SpaceString", spaceSplited[j]) ;
+                }
+                else{
+                    addressString = addressString + printingProcedureStoreInfo(tmpString+",");
+                    //addressString = addressString + tmpString+","+"\n" ;
+                    tmpString = "" ;
+                    j-- ;
+
+                }
+            }
+        }
+        Log.d("addressString", "\n"+addressString) ;
+        return addressString ;
+    }
+
 
 }
