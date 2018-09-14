@@ -3,9 +3,9 @@ package com.annanovas.andoirdbluetoothprint;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.text.DateFormatSymbols;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
@@ -22,7 +22,7 @@ import android.widget.Button;
 import android.widget.Toast;
 
 
-public class MainActivity extends Activity implements Runnable {
+public class PrinttingActivity extends Activity implements Runnable {
     protected static final String TAG = "MY_BLUETOOTH";
     private static final int REQUEST_CONNECT_DEVICE = 1;
     private static final int REQUEST_ENABLE_BT = 2;
@@ -68,18 +68,24 @@ public class MainActivity extends Activity implements Runnable {
     private static final String SPACE_COUNT_32 = "                                ";
     private String[] comaSparatedarray;
 
+    private String subTotalStr = "Sub total:" ;
+    private String vatStr = "(+)vat:" ;
+    private String discountStr = "(-)Discount:" ;
+    private String roundingStr = "(-)Rounding:" ;
+    private String netPayableStr = "Net Payable:" ;
+
 
     @Override
     public void onCreate(Bundle mSavedInstanceState) {
         super.onCreate(mSavedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_printer);
         //myPrint();
         mScan = (Button) findViewById(R.id.Scan);
         mScan.setOnClickListener(new View.OnClickListener() {
             public void onClick(View mView) {
                 mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
                 if (mBluetoothAdapter == null) {
-                    Toast.makeText(MainActivity.this, "Message1", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(PrinttingActivity.this, "Message1", Toast.LENGTH_SHORT).show();
                 } else {
                     if (!mBluetoothAdapter.isEnabled()) {
                         Intent enableBtIntent = new Intent(
@@ -88,7 +94,7 @@ public class MainActivity extends Activity implements Runnable {
                                 REQUEST_ENABLE_BT);
                     } else {
                         ListPairedDevices();
-                        Intent connectIntent = new Intent(MainActivity.this,
+                        Intent connectIntent = new Intent(PrinttingActivity.this,
                                 DeviceListActivity.class);
                         startActivityForResult(connectIntent,
                                 REQUEST_CONNECT_DEVICE);
@@ -134,6 +140,14 @@ public class MainActivity extends Activity implements Runnable {
                                 }
 
                             }
+
+                            BILL = BILL
+                                    + "--------------------------------\n\n";
+
+                            BILL = printingProcedureFinalSec("1000.00","15.00", "1015.00", "5.00", "0.00", "1010.00");
+
+                            BILL = BILL+"\n\n" ;
+                            BILL = BILL + printingProcedureStoreInfo("Powered by AnnaNovas IT") ;
 
                             BILL = BILL+"\n\n\n\n" ;
 
@@ -195,7 +209,7 @@ public class MainActivity extends Activity implements Runnable {
 
 
                         } catch (Exception e) {
-                            Log.e("MainActivity", "Exe ", e);
+                            Log.e("PrinttingActivity", "Exe ", e);
                         }
                     }
                 };
@@ -262,11 +276,11 @@ public class MainActivity extends Activity implements Runnable {
             case REQUEST_ENABLE_BT:
                 if (mResultCode == Activity.RESULT_OK) {
                     ListPairedDevices();
-                    Intent connectIntent = new Intent(MainActivity.this,
+                    Intent connectIntent = new Intent(PrinttingActivity.this,
                             DeviceListActivity.class);
                     startActivityForResult(connectIntent, REQUEST_CONNECT_DEVICE);
                 } else {
-                    Toast.makeText(MainActivity.this, "Message", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(PrinttingActivity.this, "Message", Toast.LENGTH_SHORT).show();
                 }
                 break;
         }
@@ -353,7 +367,7 @@ public class MainActivity extends Activity implements Runnable {
         @Override
         public void handleMessage(Message msg) {
             mBluetoothConnectProgressDialog.dismiss();
-            Toast.makeText(MainActivity.this, "DeviceConnected", Toast.LENGTH_SHORT).show();
+            Toast.makeText(PrinttingActivity.this, "DeviceConnected", Toast.LENGTH_SHORT).show();
         }
     };
 
@@ -451,6 +465,90 @@ public class MainActivity extends Activity implements Runnable {
         BILL = BILL + "Item      MRP   Qty        Total"+"\n" ;
         BILL = BILL + "--------------------------------\n";
         BILL = BILL+"\n" ;
+        return BILL ;
+    }
+
+    private String printingProcedureFinalSec(String subTotal, String vat, String includeVatTotal, String discount, String rounding, String netPayable){
+        //SUBTOTAL
+        int spaceCount = 13 - subTotalStr.length() ;
+        for(int i = 1 ; i <= spaceCount ; i++){
+            BILL = BILL+" " ;
+        }
+        BILL = BILL+subTotalStr ;
+        spaceCount = 19 - subTotal.length() ;
+        for(int i = 1 ; i <= spaceCount ; i++){
+            BILL = BILL+" " ;
+        }
+        BILL = BILL+subTotal ;
+        BILL = BILL+"\n" ;
+
+        //VAT
+        spaceCount = 13 - vatStr.length() ;
+        for(int i = 1 ; i <= spaceCount ; i++){
+            BILL = BILL+" " ;
+        }
+        BILL = BILL+vatStr ;
+        spaceCount = 19 - vat.length() ;
+        for(int i = 1 ; i <= spaceCount ; i++){
+            BILL = BILL+" " ;
+        }
+        BILL = BILL+vat ;
+        BILL = BILL+"\n" ;
+
+        BILL = BILL + "--------------------------------";
+        BILL = BILL+"\n" ;
+
+        //INCLUDE VAT TOTAL
+        spaceCount = 32 - includeVatTotal.length() ;
+        for(int i = 1 ; i <= spaceCount ; i++){
+            BILL = BILL+" " ;
+        }
+        BILL = BILL+includeVatTotal ;
+        BILL = BILL+"\n" ;
+
+        //DISCOUNT
+        spaceCount = 13 - discountStr.length() ;
+        for(int i = 1 ; i <= spaceCount ; i++){
+            BILL = BILL+" " ;
+        }
+        BILL = BILL+discountStr ;
+        spaceCount = 19 - discount.length() ;
+        for(int i = 1 ; i <= spaceCount ; i++){
+            BILL = BILL+" " ;
+        }
+        BILL = BILL+discount ;
+        BILL = BILL+"\n" ;
+
+        //ROUNDING
+        spaceCount = 13 - roundingStr.length() ;
+        for(int i = 1 ; i <= spaceCount ; i++){
+            BILL = BILL+" " ;
+        }
+        BILL = BILL+roundingStr ;
+        spaceCount = 19 - rounding.length() ;
+        for(int i = 1 ; i <= spaceCount ; i++){
+            BILL = BILL+" " ;
+        }
+        BILL = BILL+rounding ;
+        BILL = BILL+"\n" ;
+
+        BILL = BILL + "--------------------------------";
+        BILL = BILL+"\n" ;
+
+
+        //NET PAYABLE
+        spaceCount = 13 - netPayableStr.length() ;
+        for(int i = 1 ; i <= spaceCount ; i++){
+            BILL = BILL+" " ;
+        }
+        BILL = BILL+netPayableStr ;
+        spaceCount = 19 - netPayable.length() ;
+        for(int i = 1 ; i <= spaceCount ; i++){
+            BILL = BILL+" " ;
+        }
+        BILL = BILL+netPayable ;
+        BILL = BILL+"\n" ;
+
         return BILL ;
     }
 
@@ -575,5 +673,20 @@ public class MainActivity extends Activity implements Runnable {
         return addressString ;
     }
 
+
+    private boolean patternMatching(String input){
+        final Pattern pattern = Pattern.compile("^[A-Za-z, 0-9!@#$%^&*()<>?:;./+-]++$");
+        boolean flag = false ;
+        if (!pattern.matcher(input).matches()) {
+            Log.d("String_matching", "Invalid String") ;
+            //throw new IllegalArgumentException("Invalid String");
+            flag = false ;
+        }
+        else{
+            Log.d("String_matching", "valid String") ;
+            flag = true ;
+        }
+        return  flag ;
+    }
 
 }
