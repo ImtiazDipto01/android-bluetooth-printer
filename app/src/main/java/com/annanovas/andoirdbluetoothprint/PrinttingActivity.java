@@ -1,25 +1,49 @@
 package com.annanovas.andoirdbluetoothprint;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.content.ContentValues;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
+import android.util.Xml;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
+
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.http.util.EncodingUtils;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 
 public class PrinttingActivity extends Activity implements Runnable {
@@ -73,12 +97,16 @@ public class PrinttingActivity extends Activity implements Runnable {
     private String discountStr = "(-)Discount:" ;
     private String roundingStr = "(-)Rounding:" ;
     private String netPayableStr = "Net Payable:" ;
+    private Bitmap bitmap ;
+    private int img = R.drawable.ic_android_black_2 ;
 
 
     @Override
     public void onCreate(Bundle mSavedInstanceState) {
         super.onCreate(mSavedInstanceState);
         setContentView(R.layout.activity_printer);
+        Drawable d = getResources().getDrawable(R.drawable.img);
+        bitmap = drawableToBitmap(d) ;
         //myPrint();
         mScan = (Button) findViewById(R.id.Scan);
         mScan.setOnClickListener(new View.OnClickListener() {
@@ -119,12 +147,21 @@ public class PrinttingActivity extends Activity implements Runnable {
                                     "            XXXXX YYYYYY      \n" +
                                     "             MMM 590019      \n\n";*/
 
-                            BILL = BILL + printingProcedureStoreInfo("AnnaNovas Store");
+                            Bitmap bmp = BitmapFactory.decodeResource(getResources(), R.drawable.ic_action_name);
+                            if(bitmap != null){
+                                byte[] command = Utils.decodeBitmap(bitmap);
+                                //os.write(Utils.ESC_ALIGN_CENTER);
+                                os.write(command);
+                            }else{
+                                Log.e("BitmapNull", "the file isn't exists");
+                            }
+
+                            BILL = BILL + printingProcedureStoreInfo("AnnaNovas Shop");
                             BILL = BILL + printingProcedureMakeAddress("South Banasree, Rampura, Dhaka, Dakhin Banasree Project Road, Dhaka 1219");
                             //BILL = BILL + printingProcedureStoreInfo("MohammadPur, Dhaka-1219");
                             BILL = BILL
                                     + "--------------------------------\n\n";
-                            BILL = printingProcedure() ;
+                            /*BILL = printingProcedure() ;
                             for(int i = 0 ; i < 6 ; i++){
                                 if(i == 0){
                                     BILL = printingProcedureProductInfo("CocaCola 1.25ltr", "65.00", "1", "65.00");
@@ -139,14 +176,14 @@ public class PrinttingActivity extends Activity implements Runnable {
                                     BILL = printingProcedureProductInfo("CocaCola 1.25ltr", "65.00", "1", "65.00");
                                 }
 
-                            }
+                            }*/
 
-                            BILL = BILL
+                            /*BILL = BILL
                                     + "--------------------------------\n\n";
 
                             BILL = printingProcedureFinalSec("1000.00","15.00", "1015.00", "5.00", "0.00", "1010.00");
 
-                            BILL = BILL+"\n\n" ;
+                            BILL = BILL+"\n\n" ;*/
                             BILL = BILL + printingProcedureStoreInfo("Powered by AnnaNovas IT") ;
 
                             BILL = BILL+"\n\n\n\n" ;
@@ -186,10 +223,13 @@ public class PrinttingActivity extends Activity implements Runnable {
                                     + "-----------------------------------------------\n";
                             BILL = BILL + "\n\n ";*/
 
+
+
+
                             //os.write(BILL.getBytes());
                             os.write(new Formatter().bold().get());
                             os.write(BILL.getBytes(), 0, BILL.getBytes().length);
-                            //This is printer specific code you can comment ==== > Start
+                            //os.write(EncodingUtils.getBytes(BILL, "ISO-8859-1"));
 
                             // Setting height
                             int gs = 29;
@@ -206,6 +246,7 @@ public class PrinttingActivity extends Activity implements Runnable {
                             os.write(intToByteArray(w));
                             int n_width = 2;
                             os.write(intToByteArray(n_width));
+
 
 
                         } catch (Exception e) {
@@ -312,20 +353,7 @@ public class PrinttingActivity extends Activity implements Runnable {
     }
 
     public void run() {
-        /*try {
-            mBluetoothSocket = mBluetoothDevice.createRfcommSocketToServiceRecord(applicationUUID);
-            mBluetoothAdapter.cancelDiscovery();
-            mBluetoothSocket.connect();
-            mHandler.sendEmptyMessage(0);
 
-        } catch (IOException eConnectException) {
-            Log.d(TAG, "CouldNotConnectToSocket", eConnectException);
-            closeSocket(mBluetoothSocket);
-            if(mBluetoothConnectProgressDialog.isShowing()){
-                mBluetoothConnectProgressDialog.dismiss();
-            }
-            return;
-        }*/
         try {
             mBluetoothSocket = mBluetoothDevice.createRfcommSocketToServiceRecord(applicationUUID);
         }
@@ -350,6 +378,15 @@ public class PrinttingActivity extends Activity implements Runnable {
             }
             catch (Exception e2) {
                 Log.e("socket_connect", "Couldn't establish Bluetooth connection!");
+                try {
+                    mBluetoothSocket = (BluetoothSocket) mBluetoothDevice.getClass().getMethod("createRfcommSocket", new Class[]{int.class}).invoke(mBluetoothDevice, 2);
+                    mBluetoothSocket.connect();
+                    mHandler.sendEmptyMessage(0);
+                    Log.e("socket_connect_2","Connected");
+                }
+                catch (Exception e3) {
+                    Log.e("socket_connect_2", "Couldn't establish Bluetooth connection!");
+                }
             }
         }
     }
@@ -687,6 +724,81 @@ public class PrinttingActivity extends Activity implements Runnable {
             flag = true ;
         }
         return  flag ;
+    }
+
+    public void printPhoto(int img) {
+        try {
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.e("PrintTools", "the file isn't exists");
+        }
+    }
+
+    public static Bitmap drawableToBitmap (Drawable drawable) {
+
+        if (drawable instanceof BitmapDrawable) {
+            return ((BitmapDrawable)drawable).getBitmap();
+        }
+
+        Bitmap bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+        drawable.draw(canvas);
+
+        return bitmap;
+    }
+
+
+    private void getBitmapFromURL()
+    {
+        ProcessJSON processJSON = new ProcessJSON();
+        processJSON.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+    }
+
+
+    @SuppressLint("StaticFieldLeak")
+    private class ProcessJSON extends AsyncTask<String, String, Boolean> {
+
+        String src = "http://d297eo5mdmmrj6.cloudfront.net/shopImage/2018/12/5c12251440d54_1544693012.jpg" ;
+
+        ProcessJSON() {
+
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected Boolean doInBackground(String... strings) {
+            boolean result = true;
+            try
+            {
+                URL url = new URL(src);
+                HttpURLConnection connection;
+                connection=(HttpURLConnection) url.openConnection();
+                connection.setDoInput(true);
+                connection.connect();
+                InputStream input = connection.getInputStream();
+                bitmap = BitmapFactory.decodeStream(input);
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+                Log.e(TAG, "getBitmapFromURL: "+e);
+                return false;
+            }
+
+            return result;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean aBoolean) {
+            super.onPostExecute(aBoolean);
+
+        }
+
     }
 
 }

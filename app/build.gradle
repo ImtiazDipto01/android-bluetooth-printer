@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 27
-    buildToolsVersion "27.0.3"
+    buildToolsVersion '28.0.3'
     defaultConfig {
         applicationId "com.annanovas.andoirdbluetoothprint"
         minSdkVersion 19
@@ -26,4 +26,9 @@ dependencies {
     })
     implementation 'com.android.support:appcompat-v7:27.1.1'
     testImplementation 'junit:junit:4.12'
+    implementation 'commons-lang:commons-lang:2.6'
+}
+
+android {
+    useLibrary 'org.apache.http.legacy'
 }
