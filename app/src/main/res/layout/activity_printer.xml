@@ -26,4 +26,28 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
         android:text="Dissable"></Button>
+
+
+    <ImageView
+        android:id="@+id/iv_demo_image"
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
+        android:layout_margin="20dp"/>
+
+    <Button
+        android:id="@+id/gallery"
+        android:layout_width="match_parent"
+        android:layout_height="45dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:text="Gallery"/>
+
+    <Button
+        android:id="@+id/camera"
+        android:layout_width="match_parent"
+        android:layout_height="45dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:layout_marginTop="10dp"
+        android:text="Camera"/>
 </LinearLayout>

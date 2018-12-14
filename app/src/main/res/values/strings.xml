@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">AndoirdBluetoothPrint</string>
+    <string name="alert_message_image">We Need Permission to for image</string>
+    <string name="toast_suggestion">Unsucessfull</string>
+    <string name="permission_granted">Permission Granted</string>
+    <string name="permission_denied">Permission Denied</string>
 </resources>

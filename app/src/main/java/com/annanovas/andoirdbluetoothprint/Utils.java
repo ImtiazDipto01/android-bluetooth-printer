@@ -9,6 +9,7 @@ import java.util.List;
 public class Utils {
 
     public static final byte[] ESC_ALIGN_CENTER = new byte[] { 0x1b, 'a', 0x01 };
+    public static final byte[] ESC_ALIGN_LEFT = new byte[] { 0x1b, 'a', 0x00 };
 
     public static final byte[] UNICODE_TEXT = new byte[] {0x23, 0x23, 0x23,
             0x23, 0x23, 0x23,0x23, 0x23, 0x23,0x23, 0x23, 0x23,0x23, 0x23, 0x23,

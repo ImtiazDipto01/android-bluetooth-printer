@@ -11,33 +11,54 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.ContentValues;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.provider.MediaStore;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.FileProvider;
 import android.util.Log;
 import android.util.Xml;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.Toast;
+
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.Priority;
+import com.bumptech.glide.load.resource.bitmap.FitCenter;
+import com.bumptech.glide.request.RequestOptions;
+import com.theartofdev.edmodo.cropper.CropImage;
+import com.theartofdev.edmodo.cropper.CropImageView;
 
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.http.util.EncodingUtils;
@@ -100,15 +121,47 @@ public class PrinttingActivity extends Activity implements Runnable {
     private Bitmap bitmap ;
     private int img = R.drawable.ic_android_black_2 ;
 
+    Button btnGallery, btnCamera ;
+    private static final int REQUEST_CODE_ASK_PERMISSIONS = 1;
+    private int camera_flag = -1 ;
+    private ImageView imageView ;
+    private static  final int PICK_BAR_CODE = 1, PICK_COMPANY = 2, REQUEST_CAMERA = 3, SELECT_FILE = 4 ;
+    private ImageUtils imageUtils;
+    private String imageUri;
+    private Bitmap selectedImage;
+    private Uri photoURI ;
+
+
 
     @Override
     public void onCreate(Bundle mSavedInstanceState) {
         super.onCreate(mSavedInstanceState);
         setContentView(R.layout.activity_printer);
-        Drawable d = getResources().getDrawable(R.drawable.img);
-        bitmap = drawableToBitmap(d) ;
+        /*Drawable d = getResources().getDrawable(R.drawable.instagram);
+        bitmap = drawableToBitmap(d) ;*/
+        getBitmapFromURL();
         //myPrint();
         mScan = (Button) findViewById(R.id.Scan);
+        imageUtils = new ImageUtils(getApplicationContext());
+        btnGallery = findViewById(R.id.gallery);
+        btnCamera = findViewById(R.id.camera) ;
+        imageView = findViewById(R.id.iv_demo_image);
+
+        btnGallery.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                camera_flag = SELECT_FILE ;
+                CheckPermission();
+            }
+        });
+        btnCamera.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                camera_flag = REQUEST_CAMERA ;
+                CheckPermission();
+            }
+        });
+
         mScan.setOnClickListener(new View.OnClickListener() {
             public void onClick(View mView) {
                 mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -150,12 +203,13 @@ public class PrinttingActivity extends Activity implements Runnable {
                             Bitmap bmp = BitmapFactory.decodeResource(getResources(), R.drawable.ic_action_name);
                             if(bitmap != null){
                                 byte[] command = Utils.decodeBitmap(bitmap);
-                                //os.write(Utils.ESC_ALIGN_CENTER);
+                                os.write(Utils.ESC_ALIGN_CENTER);
                                 os.write(command);
                             }else{
                                 Log.e("BitmapNull", "the file isn't exists");
                             }
 
+                            os.write(Utils.ESC_ALIGN_LEFT);
                             BILL = BILL + printingProcedureStoreInfo("AnnaNovas Shop");
                             BILL = BILL + printingProcedureMakeAddress("South Banasree, Rampura, Dhaka, Dakhin Banasree Project Road, Dhaka 1219");
                             //BILL = BILL + printingProcedureStoreInfo("MohammadPur, Dhaka-1219");
@@ -292,13 +346,13 @@ public class PrinttingActivity extends Activity implements Runnable {
     }
 
     public void onActivityResult(int mRequestCode, int mResultCode,
-                                 Intent mDataIntent) {
-        super.onActivityResult(mRequestCode, mResultCode, mDataIntent);
+                                 Intent data) {
+        super.onActivityResult(mRequestCode, mResultCode, data);
 
         switch (mRequestCode) {
-            case REQUEST_CONNECT_DEVICE:
+            case REQUEST_CONNECT_DEVICE:{
                 if (mResultCode == Activity.RESULT_OK) {
-                    Bundle mExtra = mDataIntent.getExtras();
+                    Bundle mExtra = data.getExtras();
                     String mDeviceAddress = mExtra.getString("DeviceAddress");
                     Log.v(TAG, "Coming incoming address " + mDeviceAddress);
                     mBluetoothDevice = mBluetoothAdapter
@@ -313,8 +367,10 @@ public class PrinttingActivity extends Activity implements Runnable {
                     // progress dialog with thread
                 }
                 break;
+            }
 
-            case REQUEST_ENABLE_BT:
+
+            case REQUEST_ENABLE_BT:{
                 if (mResultCode == Activity.RESULT_OK) {
                     ListPairedDevices();
                     Intent connectIntent = new Intent(PrinttingActivity.this,
@@ -324,6 +380,86 @@ public class PrinttingActivity extends Activity implements Runnable {
                     Toast.makeText(PrinttingActivity.this, "Message", Toast.LENGTH_SHORT).show();
                 }
                 break;
+            }
+            case SELECT_FILE:{
+                if(mResultCode == RESULT_OK){
+                    Bitmap selectedImage = null;
+                    Uri imageUri = CropImage.getPickImageResultUri(this, data);
+                    cropRequest(imageUri);
+                }
+
+                break;
+            }
+            case CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE:{
+                CropImage.ActivityResult result = CropImage.getActivityResult(data);
+                if (mResultCode == RESULT_OK) {
+                    if (camera_flag == REQUEST_CAMERA) {
+                        try {
+                            Uri resultUri = result.getUri();
+                            File file = new File(String.valueOf(resultUri));
+
+                            imageUri = imageUtils.getRealPathFromURI(resultUri);
+                            Bitmap selectedImage = imageUtils.decodeBitmapFromUri(resultUri, 100);
+                            if (selectedImage != null) {
+
+                                RequestOptions options = new RequestOptions()
+                                        //.override(imageDimen, imageDimen)
+                                        .transforms(new FitCenter())
+                                        .placeholder(R.drawable.ic_no_product_image)
+                                        .error(R.drawable.ic_no_product_image)
+                                        .priority(Priority.HIGH);
+
+
+                                Glide.with(this)
+                                        .load(imageUri)
+                                        .apply(options)
+                                        .into(imageView);
+                            }
+                        } catch (FileNotFoundException e) {
+
+                        }
+                    }
+                    else if (camera_flag == SELECT_FILE) {
+                        Log.e("SELECT_FILE", "yes");
+                        Bitmap selectedImage = null;
+                        Uri resultUri = result.getUri();
+                        try {
+                            imageUri = imageUtils.getRealPathFromURI(resultUri);
+                            selectedImage = imageUtils.decodeBitmapFromUri(resultUri, 100);
+                            selectedImage = imageUtils.imageProcess(selectedImage, imageUri);
+                            if (selectedImage != null) {
+
+                                RequestOptions options = new RequestOptions()
+                                        .transforms(new FitCenter())
+                                        .placeholder(R.drawable.ic_no_product_image)
+                                        .error(R.drawable.ic_no_product_image)
+                                        .priority(Priority.HIGH);
+
+                                File file = new File(imageUri);
+                                if (file.exists()) {
+                                    Glide.with(this)
+                                            .load(imageUri)
+                                            .apply(options)
+                                            .into(imageView);
+                                } else {
+                                    Glide.with(this)
+                                            .load(Uri.parse("file:///android_asset/SampleProductImage/" + imageUri))
+                                            .apply(options)
+                                            .into(imageView);
+                                }
+
+                            }
+                        } catch (FileNotFoundException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                }
+                break;
+            }
+            case REQUEST_CAMERA:{
+                cropRequest(photoURI);
+            }
         }
     }
 
@@ -759,7 +895,7 @@ public class PrinttingActivity extends Activity implements Runnable {
     @SuppressLint("StaticFieldLeak")
     private class ProcessJSON extends AsyncTask<String, String, Boolean> {
 
-        String src = "http://d297eo5mdmmrj6.cloudfront.net/shopImage/2018/12/5c12251440d54_1544693012.jpg" ;
+        String src = "http://d297eo5mdmmrj6.cloudfront.net/userImage/userThumbImage/2018/12/5c137a209cbf1_1544780320.png" ;
 
         ProcessJSON() {
 
@@ -796,9 +932,140 @@ public class PrinttingActivity extends Activity implements Runnable {
         @Override
         protected void onPostExecute(Boolean aBoolean) {
             super.onPostExecute(aBoolean);
+            if(aBoolean){
+                bitmap = getResizedBitmap(bitmap, 100, 100) ;
+            }
 
         }
 
     }
+
+    public Bitmap getResizedBitmap(Bitmap bm, int newHeight, int newWidth) {
+        Log.e("getResizedBitmap", "true") ;
+        int width = bm.getWidth();
+        int height = bm.getHeight();
+        float scaleWidth = ((float) newWidth) / width;
+        float scaleHeight = ((float) newHeight) / height;
+        // CREATE A MATRIX FOR THE MANIPULATION
+        Matrix matrix = new Matrix();
+        // RESIZE THE BIT MAP
+        matrix.postScale(scaleWidth, scaleHeight);
+
+        // "RECREATE" THE NEW BITMAP
+        Bitmap resizedBitmap = Bitmap.createBitmap(bm, 0, 0, width, height,
+                matrix, false);
+
+        return resizedBitmap;
+    }
+
+    private void CheckPermission() {
+        final int hasCameraPermission = ContextCompat.checkSelfPermission(this, android.Manifest.permission.CAMERA);
+        final int hasStoragePermission = ContextCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        final List<String> listPermissionNeeded = new ArrayList<>();
+        if (hasCameraPermission != PackageManager.PERMISSION_GRANTED) {
+            listPermissionNeeded.add(android.Manifest.permission.CAMERA);
+        }
+        if (hasStoragePermission != PackageManager.PERMISSION_GRANTED) {
+            listPermissionNeeded.add(android.Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        }
+        if (!listPermissionNeeded.isEmpty()) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this, android.Manifest.permission.CAMERA) ||
+                    ActivityCompat.shouldShowRequestPermissionRationale(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                showMessageOKCancel(getResources().getString(R.string.alert_message_image), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        switch (which) {
+                            case DialogInterface.BUTTON_POSITIVE:
+                                ActivityCompat.requestPermissions(PrinttingActivity.this, listPermissionNeeded.toArray(new String[listPermissionNeeded.size()]), REQUEST_CODE_ASK_PERMISSIONS);
+                                break;
+                            case DialogInterface.BUTTON_NEGATIVE:
+                                Toast.makeText(PrinttingActivity.this, getResources().getString(R.string.toast_suggestion), Toast.LENGTH_SHORT).show();
+                                break;
+                        }
+                    }
+                });
+            } else {
+                ActivityCompat.requestPermissions(this, listPermissionNeeded.toArray(new String[listPermissionNeeded.size()]), REQUEST_CODE_ASK_PERMISSIONS);
+            }
+        }
+        else {
+            //openBottomSheet();
+            if(camera_flag == SELECT_FILE){
+                selectGallery();
+            }
+            else if(camera_flag == REQUEST_CAMERA){
+                openCamera();
+            }
+        }
+    }
+
+    private void selectGallery() {
+        Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        intent.setType("image/*");
+        startActivityForResult(Intent.createChooser(intent, "Select File"), SELECT_FILE);
+    }
+
+    private void showMessageOKCancel(String message, DialogInterface.OnClickListener okListener) {
+        new AlertDialog.Builder(PrinttingActivity.this)
+                .setMessage(message)
+                .setPositiveButton("OK", okListener)
+                .setNegativeButton("Cancel", null)
+                .create()
+                .show();
+    }
+
+    private void cropRequest(Uri imageUri) {
+        CropImage.activity(imageUri)
+                .setGuidelines(CropImageView.Guidelines.ON)
+                .setMultiTouchEnabled(true)
+                .setMinCropWindowSize(0,0)
+                .start(this);
+    }
+
+    private void openCamera(){
+        try {
+            Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            File file = imageUtils.createImageFile();
+            imageUri = String.valueOf(file);
+            photoURI = FileProvider.getUriForFile(PrinttingActivity.this, BuildConfig.APPLICATION_ID + ".provider", file);
+            intent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
+            startActivityForResult(intent, REQUEST_CAMERA);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        Map<String, Integer> perms = new HashMap<>();
+        switch (requestCode) {
+            case REQUEST_CODE_ASK_PERMISSIONS:
+                perms.put(android.Manifest.permission.CAMERA, PackageManager.PERMISSION_GRANTED);
+                perms.put(android.Manifest.permission.WRITE_EXTERNAL_STORAGE, PackageManager.PERMISSION_GRANTED);
+                if (grantResults.length > 0) {
+                    for (int i = 0; i < permissions.length; i++)
+                        perms.put(permissions[i], grantResults[i]);
+                    if (perms.get(android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED &&
+                            perms.get(android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+                        Toast.makeText(this, getResources().getString(R.string.permission_granted), Toast.LENGTH_SHORT).show();
+                        //openBottomSheet();
+                        if(camera_flag == 1){
+                            selectGallery();
+                        }
+                        else if(camera_flag == 2){
+                            openCamera();
+                        }
+                    } else {
+                        Toast.makeText(this, getResources().getString(R.string.permission_denied), Toast.LENGTH_SHORT).show();
+                    }
+                }
+                break;
+            default:
+                super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        }
+    }
+
+
+
 
 }
