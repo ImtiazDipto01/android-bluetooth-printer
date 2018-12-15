@@ -139,7 +139,7 @@ public class PrinttingActivity extends Activity implements Runnable {
         setContentView(R.layout.activity_printer);
         /*Drawable d = getResources().getDrawable(R.drawable.instagram);
         bitmap = drawableToBitmap(d) ;*/
-        getBitmapFromURL();
+        //getBitmapFromURL();
         //myPrint();
         mScan = (Button) findViewById(R.id.Scan);
         imageUtils = new ImageUtils(getApplicationContext());
@@ -395,11 +395,13 @@ public class PrinttingActivity extends Activity implements Runnable {
                 if (mResultCode == RESULT_OK) {
                     if (camera_flag == REQUEST_CAMERA) {
                         try {
+                            bitmap = result.getBitmap() ;
                             Uri resultUri = result.getUri();
                             File file = new File(String.valueOf(resultUri));
 
                             imageUri = imageUtils.getRealPathFromURI(resultUri);
                             Bitmap selectedImage = imageUtils.decodeBitmapFromUri(resultUri, 100);
+                            bitmap = imageUtils.decodeBitmapFromUri(resultUri, 100);
                             if (selectedImage != null) {
 
                                 RequestOptions options = new RequestOptions()
@@ -420,12 +422,20 @@ public class PrinttingActivity extends Activity implements Runnable {
                         }
                     }
                     else if (camera_flag == SELECT_FILE) {
+                        bitmap = result.getBitmap() ;
                         Log.e("SELECT_FILE", "yes");
                         Bitmap selectedImage = null;
                         Uri resultUri = result.getUri();
                         try {
                             imageUri = imageUtils.getRealPathFromURI(resultUri);
                             selectedImage = imageUtils.decodeBitmapFromUri(resultUri, 100);
+                            bitmap = imageUtils.decodeBitmapFromUri(resultUri, 100);
+                            if(selectedImage != null){
+                                Log.e("bitmapNull", "bitmap not null");
+                            }
+                            else{
+                                Log.e("bitmapNull", "bitmap null");
+                            }
                             selectedImage = imageUtils.imageProcess(selectedImage, imageUri);
                             if (selectedImage != null) {
 
@@ -1018,7 +1028,8 @@ public class PrinttingActivity extends Activity implements Runnable {
         CropImage.activity(imageUri)
                 .setGuidelines(CropImageView.Guidelines.ON)
                 .setMultiTouchEnabled(true)
-                .setMinCropWindowSize(0,0)
+                .setAspectRatio(1,1)
+                .setRequestedSize(100,100, CropImageView.RequestSizeOptions.RESIZE_EXACT)
                 .start(this);
     }
 
